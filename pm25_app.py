@@ -9,11 +9,17 @@ Example sketch to connect to PM2.5 sensor with either I2C or UART.
 
 # pylint: disable=unused-import
 import time
+import logging
+import logging.handlers
+import argparse
+import sys
 import board
 import busio
 from digitalio import DigitalInOut, Direction, Pull
 from adafruit_pm25.i2c import PM25_I2C
 
+LOG_FILENAME = "/tmp/pm25.log"
+LOG_LEVEL = logging.INFO
 
 reset_pin = None
 # If you have a GPIO, its not a bad idea to connect it to the RESET pin
@@ -21,6 +27,38 @@ reset_pin = DigitalInOut(board.D22)
 reset_pin.direction = Direction.OUTPUT
 reset_pin.value = False
 
+# Configure logging to log to a file, making a new file at midnight and keeping the last 3 day's data
+# Give the logger a unique name (good practice)
+logger = logging.getLogger(__name__)
+# Set the log level to LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
+# Make a handler that writes to a file, making a new file at midnight and keeping 3 backups
+handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME, when="midnight", backupCount=3)
+# Format each log message like this
+formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+# Attach the formatter to the handler
+handler.setFormatter(formatter)
+# Attach the handler to the logger
+logger.addHandler(handler)
+
+
+# Make a class we can use to capture stdout and sterr in the log
+class MyLogger(object):
+    def __init__(self, logger, level):
+        """Needs a logger and a logger level."""
+        self.logger = logger
+        self.level = level
+
+    def write(self, message):
+        # Only log if there is a message (not just a new line)
+        if message.rstrip() != "":
+            self.logger.log(self.level, message.rstrip())
+
+
+# Replace stdout with logging to file at INFO level
+sys.stdout = MyLogger(logger, logging.INFO)
+# Replace stderr with logging to file at ERROR level
+sys.stderr = MyLogger(logger, logging.ERROR)
 
 # For use with a computer running Windows:
 # import serial
