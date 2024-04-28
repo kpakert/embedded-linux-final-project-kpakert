@@ -4,7 +4,7 @@
 case "$1" in
     start)
         echo "Starting pm25 app"
-        start-stop-daemon -S -user root -n pm25app --exec /usr/bin/python /usr/bin/pm25_app.py -- -d
+        start-stop-daemon -S -user root -n pm25app --exec /usr/bin/python /usr/bin/pm25_app.py 
         ;;
     stop)
         echo "Stopping pm25 app"
