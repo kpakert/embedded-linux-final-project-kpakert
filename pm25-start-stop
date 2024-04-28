@@ -1,14 +1,20 @@
 #!/bin/sh
 
+# This next line determines what user the script runs as.
+# Root generally not recommended but necessary if you are using the Raspberry Pi GPIO from Python.
+DAEMON_USER=root
+
+# The process ID of the script when it runs is stored here:
+PIDFILE=/var/run/pm25app.pid
 
 case "$1" in
     start)
         echo "Starting pm25 app"
-        start-stop-daemon -S --bacground -n pm25app --startas /usr/bin/pm25_app.py
+        start-stop-daemon -S --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER  --startas /usr/bin/pm25_app.py
         ;;
     stop)
         echo "Stopping pm25 app"
-        start-stop-daemon -K -n pm25app
+        start-stop-daemon --stop --pidfile $PIDFILE --retry 10
         ;;
     *)
         echo "Usage: %0 {start|stop}"
